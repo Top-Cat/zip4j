@@ -70,7 +70,8 @@ public class FileHeaderFactory {
       fileHeader.setCrc(zipParameters.getEntryCRC());
     }
 
-    fileHeader.setGeneralPurposeFlag(determineGeneralPurposeBitFlag(fileHeader.isEncrypted(), zipParameters, charset));
+    fileHeader.setGeneralPurposeFlag(determineGeneralPurposeBitFlag(fileHeader.isEncrypted(), zipParameters));
+    HeaderUtil.updateUTF8Flag(fileHeader, charset);
     fileHeader.setDataDescriptorExists(zipParameters.isWriteExtendedLocalFileHeader());
     fileHeader.setFileComment(zipParameters.getFileComment());
     return fileHeader;
@@ -96,13 +97,9 @@ public class FileHeaderFactory {
     return localFileHeader;
   }
 
-  private byte[] determineGeneralPurposeBitFlag(boolean isEncrypted, ZipParameters zipParameters, Charset charset) {
+  private byte[] determineGeneralPurposeBitFlag(boolean isEncrypted, ZipParameters zipParameters) {
     byte[] generalPurposeBitFlag = new byte[2];
     generalPurposeBitFlag[0] = generateFirstGeneralPurposeByte(isEncrypted, zipParameters);
-    if(charset == null || InternalZipConstants.CHARSET_UTF_8.equals(charset)) {
-      // set 3rd bit which corresponds to utf-8 file name charset
-      generalPurposeBitFlag[1] = setBit(generalPurposeBitFlag[1], 3);
-    }
     return generalPurposeBitFlag;
   }
 

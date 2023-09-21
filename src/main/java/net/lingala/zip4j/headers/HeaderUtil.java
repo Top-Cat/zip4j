@@ -10,6 +10,8 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 
+import static net.lingala.zip4j.util.BitUtils.setBit;
+import static net.lingala.zip4j.util.BitUtils.unsetBit;
 import static net.lingala.zip4j.util.InternalZipConstants.ZIP4J_DEFAULT_CHARSET;
 import static net.lingala.zip4j.util.InternalZipConstants.ZIP_STANDARD_CHARSET_NAME;
 import static net.lingala.zip4j.util.Zip4jUtil.isStringNotNullAndNotEmpty;
@@ -30,6 +32,13 @@ public class HeaderUtil {
     }
 
     return fileHeader;
+  }
+
+  public static void updateUTF8Flag(FileHeader fileHeader, Charset charset) {
+    byte[] bitFlag = fileHeader.getGeneralPurposeFlag();
+    boolean isUTF8 = charset == null || InternalZipConstants.CHARSET_UTF_8.equals(charset);
+    bitFlag[1] = isUTF8 ? setBit(bitFlag[1], 3) : unsetBit(bitFlag[1], 3);
+    fileHeader.setFileNameUTF8Encoded(isUTF8);
   }
 
   public static String decodeStringWithCharset(byte[] data, boolean isUtf8Encoded, Charset charset) {

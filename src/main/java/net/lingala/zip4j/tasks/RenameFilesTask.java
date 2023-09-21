@@ -71,6 +71,8 @@ public class RenameFilesTask extends AbstractModifyFileTask<RenameFilesTask.Rena
           byte[] newFileNameBytes = HeaderUtil.getBytesFromString(newFileName, charset);
           int headersOffset = newFileNameBytes.length - fileHeader.getFileNameLength();
 
+          HeaderUtil.updateUTF8Flag(fileHeader, charset);
+
           currentFileCopyPointer = copyEntryAndChangeFileName(newFileNameBytes, fileHeader, currentFileCopyPointer, lengthToCopy,
               inputStream, outputStream, progressMonitor, taskParameters.zip4jConfig.getBufferSize());
 
@@ -103,7 +105,12 @@ public class RenameFilesTask extends AbstractModifyFileTask<RenameFilesTask.Rena
                                           ProgressMonitor progressMonitor, int bufferSize) throws IOException {
     long currentFileCopyPointer = start;
 
-    currentFileCopyPointer += copyFile(inputStream, outputStream, currentFileCopyPointer, 26, progressMonitor, bufferSize); // 26 is offset until file name length
+    currentFileCopyPointer += copyFile(inputStream, outputStream, currentFileCopyPointer, 6, progressMonitor, bufferSize); // 6 is offset until bit flags
+
+    outputStream.write(fileHeader.getGeneralPurposeFlag());
+    currentFileCopyPointer += 2;
+
+    currentFileCopyPointer += copyFile(inputStream, outputStream, currentFileCopyPointer, 18, progressMonitor, bufferSize); // 26 (6 + 2 + 18) is offset until file name length
 
     rawIO.writeShortLittleEndian(outputStream, newFileNameBytes.length);
 
