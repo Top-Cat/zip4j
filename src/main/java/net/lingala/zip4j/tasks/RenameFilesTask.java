@@ -1,9 +1,11 @@
 package net.lingala.zip4j.tasks;
 
 import net.lingala.zip4j.exception.ZipException;
+import net.lingala.zip4j.headers.HeaderSignature;
 import net.lingala.zip4j.headers.HeaderUtil;
 import net.lingala.zip4j.headers.HeaderWriter;
 import net.lingala.zip4j.io.outputstream.SplitOutputStream;
+import net.lingala.zip4j.model.ExtraDataRecord;
 import net.lingala.zip4j.model.FileHeader;
 import net.lingala.zip4j.model.Zip4jConfig;
 import net.lingala.zip4j.model.ZipModel;
@@ -18,6 +20,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -71,6 +74,17 @@ public class RenameFilesTask extends AbstractModifyFileTask<RenameFilesTask.Rena
           byte[] newFileNameBytes = HeaderUtil.getBytesFromString(newFileName, charset);
           int headersOffset = newFileNameBytes.length - fileHeader.getFileNameLength();
 
+          List<ExtraDataRecord> toRemove = new ArrayList<>();
+          List<ExtraDataRecord> extraDataRecords = fileHeader.getExtraDataRecords();
+          if (extraDataRecords != null) {
+            for (ExtraDataRecord record : extraDataRecords) {
+              if (record.getHeader() == HeaderSignature.UTF8_EXTRA_DATA_RECORD.getValue()) {
+                toRemove.add(record);
+              }
+            }
+            extraDataRecords.removeAll(toRemove);
+          }
+
           HeaderUtil.updateUTF8Flag(fileHeader, charset);
 
           currentFileCopyPointer = copyEntryAndChangeFileName(newFileNameBytes, fileHeader, currentFileCopyPointer, lengthToCopy,
@@ -113,8 +127,8 @@ public class RenameFilesTask extends AbstractModifyFileTask<RenameFilesTask.Rena
     currentFileCopyPointer += copyFile(inputStream, outputStream, currentFileCopyPointer, 18, progressMonitor, bufferSize); // 26 (6 + 2 + 18) is offset until file name length
 
     rawIO.writeShortLittleEndian(outputStream, newFileNameBytes.length);
-
     currentFileCopyPointer += 2; // length of file name length
+
     currentFileCopyPointer += copyFile(inputStream, outputStream, currentFileCopyPointer, 2, progressMonitor, bufferSize); // 2 is for length of extra field length
 
     outputStream.write(newFileNameBytes);
