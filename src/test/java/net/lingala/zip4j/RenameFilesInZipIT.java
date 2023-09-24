@@ -203,6 +203,21 @@ public class RenameFilesInZipIT extends AbstractIT {
   }
 
   @Test
+  public void testRenameWithUTF8ExtraData() throws IOException {
+    TestUtils.copyFile(TestUtils.getTestArchiveFromResources("c5e4295dca1604556098a5bdd825641e1ca9288e.zip"),
+            generatedZipFile);
+    ZipFile zipFile = new ZipFile(generatedZipFile);
+
+    Map<String, String> fileNamesMap = new HashMap<>();
+    fileNamesMap.put("ogg Christian Nodal - Adi├│s Amor (Audio).egg", "ogg Christian Nodal - Adiós Amor (Audio).egg");
+
+    zipFile.renameFiles(fileNamesMap);
+
+    ZipFileVerifier.verifyZipFileByExtractingAllFiles(generatedZipFile, null, outputFolder, 5, false);
+    verifyFileNamesChanged(zipFile, fileNamesMap, false);
+  }
+
+  @Test
   public void testRenameForZipFileContainingExtraDataRecords() throws IOException {
     TestUtils.createZipFileWithZipOutputStream(generatedZipFile, FILES_TO_ADD);
     ZipFile zipFile = new ZipFile(generatedZipFile);
